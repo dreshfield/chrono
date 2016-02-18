@@ -1,5 +1,7 @@
 /*
 
+TODO: Does this need to be broken out into two parsers -- ENTimeFromCasualFormatParser and ENTimeFromWeekdayParser?
+TODO: This will undoubtedly require writing additional tests -- what cases need to be covered?
 
 */
 
@@ -7,15 +9,18 @@ var moment = require('moment');
 var Parser = require('../parser').Parser;
 var ParsedResult = require('../../result').ParsedResult;
 
-var PATTERN = /(\W|^)([0-9]+)\s*(days?|weeks?|months?|years?)\s*(from)\s*((today|tomorrow|yesterday)|((last|next)?\s(Monday|Mon|Tuesday|Tue|Wednesday|Wed|Thursday|Thurs|Friday|Fri|Saturday|Sat|Sunday|Sun)))(?=(?:\W|$))/i;
+// TODO: \W in the positive lookahead at the end seems to mean this could include nonsensical constructions like "-26 days from today" -- is this realistically a problem?
+var PATTERN = /(\W|^)([0-9]+)\s*(days?|weeks?|months?|years?)\s*(from)\s*((today|tomorrow|tmr|tom|yesterday)|((last|next)?\s(Monday|Mon|Tuesday|Tue|Wednesday|Wed|Thursday|Thurs|Friday|Fri|Saturday|Sat|Sunday|Sun)))(?=(?:\W|$))/i;
 
 exports.Parser = function ENTimeAgoFormatParser(){
+    
     Parser.apply(this, arguments);
 
-    this.pattern = function() { 
-        return this.isStrictMode()? STRICT_PATTERN : PATTERN; 
-    }
+// TODO: from CasualDateParser -- required? 
+//    this.pattern = function () { return PATTERN; }
 
+// TODO: cf. extractor from CasualDateParser -- do these two need to be merged, or does one need to replace the other? Clarification needed on this logic.
+// 		 NB -- see note at head of doc
     this.extract = function(text, ref, match, opt){
 
         if (match.index > 0 && text[match.index-1].match(/\w/)) return null;
@@ -29,16 +34,11 @@ exports.Parser = function ENTimeAgoFormatParser(){
             text: text,
             ref: ref,
         });
-
-        var num = match[2];
-        if(num === 'a' || num === 'an'){
-            num = 1;
-        } else {
-            num = parseInt(num);
-        }
         
         var date = moment(ref);
-/*
+
+/* TODO: determine if this can be safely removed, since we're not using minutes/hours
+
         if (match[3].match(/hour/) || match[3].match(/minute/)) {
             if (match[3].match(/hour/)) {
 
@@ -58,6 +58,7 @@ exports.Parser = function ENTimeAgoFormatParser(){
             return result;
         }
 */
+
         if (match[3].match(/weeks/)) {
             date.add(-num, 'week');
 
